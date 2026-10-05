@@ -87,6 +87,8 @@ data class Node(
     val keyMatch: Boolean = true,
     /** The key a mismatch refused, kept so the warning can name it. Null whenever [keyMatch] is true. */
     val newPublicKey: ByteString? = null,
+    /** Phone-local chip color. Null keeps the color derived from [num]. */
+    val customColor: Int? = null,
 ) {
     val capabilities: Capabilities by lazy { Capabilities(metadata?.firmware_version) }
 
@@ -115,7 +117,7 @@ data class Node(
     internal fun isOnline(threshold: Int): Boolean = lastHeard > threshold
 
     val colors: Pair<Int, Int>
-        get() = nodeColorsFromNum(num)
+        get() = customColor?.let { nodeColorPair(it) } ?: nodeColorsFromNum(num)
 
     val isUnknownUser
         get() = user.hw_model == HardwareModel.UNSET
@@ -249,12 +251,9 @@ data class Node(
         fun getRelayNode(relayNodeId: Int, nodes: List<Node>, ourNodeNum: Int?): Node? {
             val relayNodeIdSuffix = relayNodeId and RELAY_NODE_SUFFIX_MASK
 
-            val candidateRelayNodes =
-                nodes.filter {
-                    it.num != ourNodeNum &&
-                        it.lastHeard != 0 &&
-                        (it.num and RELAY_NODE_SUFFIX_MASK) == relayNodeIdSuffix
-                }
+            val candidateRelayNodes = nodes.filter {
+                it.num != ourNodeNum && it.lastHeard != 0 && (it.num and RELAY_NODE_SUFFIX_MASK) == relayNodeIdSuffix
+            }
 
             val closestRelayNode =
                 if (candidateRelayNodes.size == 1) {

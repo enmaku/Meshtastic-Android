@@ -34,6 +34,7 @@ import kotlinx.coroutines.test.setMain
 import org.meshtastic.core.data.datasource.NodeInfoReadDataSource
 import org.meshtastic.core.data.datasource.NodeInfoWriteDataSource
 import org.meshtastic.core.database.entity.MyNodeEntity
+import org.meshtastic.core.database.entity.NodeEntity
 import org.meshtastic.core.database.entity.NodeWithRelations
 import org.meshtastic.core.di.CoroutineDispatchers
 import org.meshtastic.core.model.MeshLog
@@ -42,6 +43,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 abstract class CommonNodeRepositoryTest {
 
@@ -53,6 +55,8 @@ abstract class CommonNodeRepositoryTest {
     private val dispatchers = CoroutineDispatchers(main = testDispatcher, io = testDispatcher, default = testDispatcher)
 
     private val myNodeInfoFlow = MutableStateFlow<MyNodeEntity?>(null)
+    private val nodeDbFlow = MutableStateFlow<Map<Int, NodeWithRelations>>(emptyMap())
+    private val nodeColorPrefs = MemoryNodeColorPrefs()
 
     protected lateinit var repository: NodeRepositoryImpl
 
@@ -70,7 +74,7 @@ abstract class CommonNodeRepositoryTest {
         localStatsDataSource = FakeLocalStatsDataSource()
 
         every { readDataSource.myNodeInfoFlow() } returns myNodeInfoFlow
-        every { readDataSource.nodeDBbyNumFlow() } returns MutableStateFlow<Map<Int, NodeWithRelations>>(emptyMap())
+        every { readDataSource.nodeDBbyNumFlow() } returns nodeDbFlow
 
         repository =
             NodeRepositoryImpl(
@@ -79,6 +83,7 @@ abstract class CommonNodeRepositoryTest {
                 writeDataSource,
                 dispatchers,
                 localStatsDataSource,
+                nodeColorPrefs,
             )
     }
 
@@ -121,5 +126,20 @@ abstract class CommonNodeRepositoryTest {
         val result = repository.effectiveLogNodeId(remoteNodeNum).first()
 
         assertEquals(remoteNodeNum, result)
+    }
+
+    @Test
+    fun `a color set on one radio still applies when that radio database has none`() = runTest(testDispatcher) {
+        val red = 0xFFFF0000.toInt()
+        val nodeNum = 7
+        nodeDbFlow.value = mapOf(nodeNum to NodeWithRelations(NodeEntity(num = nodeNum, customColor = red), null))
+        assertEquals(red, repository.nodeDBbyNum.value[nodeNum]?.customColor)
+
+        nodeDbFlow.value = mapOf(nodeNum to NodeWithRelations(NodeEntity(num = nodeNum), null))
+        assertEquals(red, repository.nodeDBbyNum.value[nodeNum]?.customColor)
+
+        repository.setNodeColor(nodeNum, null)
+        nodeDbFlow.value = mapOf(nodeNum to NodeWithRelations(NodeEntity(num = nodeNum, customColor = red), null))
+        assertNull(repository.nodeDBbyNum.value[nodeNum]?.customColor)
     }
 }

@@ -141,6 +141,7 @@ private fun NodeDetailScaffold(
             },
             onFirmwareSelect = { activeOverlay = NodeDetailOverlay.FirmwareReleaseInfo(it) },
             onSaveNotes = { num, notes -> viewModel.setNodeNotes(num, notes) },
+            onSaveColor = { num, color -> viewModel.setNodeColor(num, color) },
             modifier = Modifier.padding(paddingValues),
         )
     }

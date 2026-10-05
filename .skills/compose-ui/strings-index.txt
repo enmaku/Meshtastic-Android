@@ -1228,6 +1228,8 @@ no_usb_devices_found
 no_usb_devices_hint
 no_usb_devices_seen
 ### NODE ###
+node_color
+node_color_use_default
 node_count_online
 node_count_shown
 node_count_template

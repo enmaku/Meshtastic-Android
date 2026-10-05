@@ -94,7 +94,7 @@ class DatabaseMergerTest {
         messageText = text, // FTS indexes this column
     )
 
-    private fun node(num: Int, notes: String = "") = NodeEntity(
+    private fun node(num: Int, notes: String = "", customColor: Int? = null) = NodeEntity(
         num = num,
         user =
         User.Builder()
@@ -105,6 +105,7 @@ class DatabaseMergerTest {
             }
             .build(),
         notes = notes,
+        customColor = customColor,
     )
 
     private fun logEntry(uuid: String, portNum: Int, time: Long) = MeshLog(
@@ -320,5 +321,20 @@ class DatabaseMergerTest {
             dest.discoveryDao().getAllSessionsSnapshot().size,
             "discovery sessions not duplicated on retry",
         )
+    }
+
+    @Test
+    fun mergeFillsBlankCustomColorAndKeepsDestinationColor() = runTest {
+        val red = 0xFFFF0000.toInt()
+        val blue = 0xFF0000FF.toInt()
+        dest.nodeInfoDao().upsert(node(10, customColor = red))
+        dest.nodeInfoDao().upsert(node(20))
+        source.nodeInfoDao().upsert(node(10, customColor = blue))
+        source.nodeInfoDao().upsert(node(20, customColor = blue))
+
+        DatabaseMerger.merge(source, dest, sourceName)
+
+        assertEquals(red, dest.nodeInfoDao().getNodeByNum(10)?.node?.customColor)
+        assertEquals(blue, dest.nodeInfoDao().getNodeByNum(20)?.node?.customColor)
     }
 }

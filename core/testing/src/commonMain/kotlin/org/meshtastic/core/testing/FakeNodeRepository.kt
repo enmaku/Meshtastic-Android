@@ -163,6 +163,11 @@ class FakeNodeRepository :
         _nodeDBbyNum.value = _nodeDBbyNum.value + (num to node.copy(notes = notes))
     }
 
+    override suspend fun setNodeColor(num: Int, color: Int?) {
+        val node = _nodeDBbyNum.value[num] ?: return
+        _nodeDBbyNum.value = _nodeDBbyNum.value + (num to node.copy(customColor = color))
+    }
+
     override suspend fun updatePowerChannelLabel(num: Int, channelIndex: Int, label: String) {
         val node = _nodeDBbyNum.value[num] ?: return
         val merged = mergePowerChannelLabel(node.powerChannelLabels, channelIndex, label)

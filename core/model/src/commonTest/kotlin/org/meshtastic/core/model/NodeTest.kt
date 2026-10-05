@@ -67,8 +67,21 @@ class NodeTest {
     fun colors_returnsForegroundAndBackgroundValues() {
         val colors = Node(num = 0x123456).colors
 
-        assertNotNull(colors.first)
-        assertNotNull(colors.second)
+        assertEquals(nodeColorsFromNum(0x123456), colors)
+    }
+
+    @Test
+    fun colors_usesCustomColorAndPicksTextFromBrightness() {
+        val yellow = 0xFFFFFF00.toInt()
+        val black = 0xFF000000.toInt()
+
+        val bright = Node(num = 1, customColor = yellow).colors
+        assertEquals(0xFF000000.toInt(), bright.first)
+        assertEquals(yellow, bright.second)
+
+        val dark = Node(num = 1, customColor = black).colors
+        assertEquals(0xFFFFFFFF.toInt(), dark.first)
+        assertEquals(black, dark.second)
     }
 
     @Test

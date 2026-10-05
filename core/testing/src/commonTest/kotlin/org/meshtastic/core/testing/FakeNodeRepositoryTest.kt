@@ -150,6 +150,19 @@ class FakeNodeRepositoryTest {
     }
 
     @Test
+    fun `setNodeColor persists and clears a color`() = runTest {
+        val nodeNum = 1234
+        repository.upsert(Node(num = nodeNum))
+        repository.setNodeColor(nodeNum, 0xFF00FF00.toInt())
+
+        assertEquals(0xFF00FF00.toInt(), repository.nodeDBbyNum.value[nodeNum]?.customColor)
+
+        repository.setNodeColor(nodeNum, null)
+
+        assertEquals(null, repository.nodeDBbyNum.value[nodeNum]?.customColor)
+    }
+
+    @Test
     fun `clearNodeDB preserves favorites`() = runTest {
         val node1 = Node(num = 1, isFavorite = true)
         val node2 = Node(num = 2, isFavorite = false)

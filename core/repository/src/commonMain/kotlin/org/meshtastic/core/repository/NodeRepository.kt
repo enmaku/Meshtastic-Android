@@ -160,6 +160,14 @@ interface NodeRepository {
      */
     suspend fun setNodeNotes(num: Int, notes: String)
 
+    /**
+     * Sets or clears the chip color for a node. The choice is kept for every radio on this phone.
+     *
+     * @param num The node number.
+     * @param color An opaque ARGB color, or null to use the color derived from the node number.
+     */
+    suspend fun setNodeColor(num: Int, color: Int?)
+
     /** Clears the unheard flag on every node. See NodeInfoDao.markAllHeardOnCurrentLora. */
     suspend fun markAllHeardOnCurrentLora()
 

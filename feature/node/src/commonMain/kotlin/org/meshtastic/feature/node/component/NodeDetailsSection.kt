@@ -44,6 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.semantics.Role
@@ -121,7 +122,9 @@ fun NodeDetailsSection(
     reportedTarget: String? = null,
     isLocal: Boolean = false,
     onRequestUserInfo: (() -> Unit)? = null,
+    onPickColor: ((nodeNum: Int, color: Int?) -> Unit)? = null,
 ) {
+    var showColorPicker by remember { mutableStateOf(false) }
     SectionCard(title = Res.string.details, modifier = modifier) {
         Column(modifier = Modifier.animateContentSize()) {
             if (node.mismatchKey) {
@@ -133,11 +136,26 @@ fun NodeDetailsSection(
                     bgColor = node.colors.second.toLong(),
                     deviceHardware = deviceHardware,
                     reportedTarget = reportedTarget,
+                    onAvatarClick = onPickColor?.let { { showColorPicker = true } },
                 )
                 SectionDivider()
             }
             MainNodeDetails(node, isLocal, onRequestUserInfo)
         }
+    }
+    if (showColorPicker && onPickColor != null) {
+        NodeColorDialog(
+            initialColor = Color(node.colors.second),
+            onConfirm = { color ->
+                onPickColor(node.num, color)
+                showColorPicker = false
+            },
+            onUseDefault = {
+                onPickColor(node.num, null)
+                showColorPicker = false
+            },
+            onDismiss = { showColorPicker = false },
+        )
     }
 }
 

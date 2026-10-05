@@ -1270,6 +1270,8 @@
     <string name="no_usb_devices_hint">Connect a device with a USB data cable to use serial.</string>
     <string name="no_usb_devices_seen">No USB devices detected</string>
     <!-- NODE -->
+    <string name="node_color">Node color</string>
+    <string name="node_color_use_default">Use default color</string>
     <string name="node_count_online">%1$d online</string>
     <string name="node_count_shown">%1$d shown</string>
     <string name="node_count_template">(%1$d online / %2$d shown / %3$d total)</string>

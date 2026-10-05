@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.meshtastic.core.model.ConnectionState
 import org.meshtastic.core.model.DeviceType
@@ -63,6 +64,7 @@ import org.meshtastic.core.model.FirmwareUpdateNotice
 import org.meshtastic.core.model.InterfaceId
 import org.meshtastic.core.model.service.LockdownState
 import org.meshtastic.core.navigation.FirmwareRoute
+import org.meshtastic.core.repository.NodeColorPrefs
 import org.meshtastic.core.navigation.Route
 import org.meshtastic.core.navigation.SettingsRoute
 import org.meshtastic.core.resources.Res
@@ -236,6 +238,7 @@ fun ConnectionsScreen(
     val persistedDeviceName by scanModel.persistedDeviceName.collectAsStateWithLifecycle()
     val pendingRecovery by scanModel.pendingRecovery.collectAsStateWithLifecycle()
 
+    val nodeColors by koinInject<NodeColorPrefs>().colors.collectAsStateWithLifecycle()
     val bleDevices by scanModel.bleDevicesForUi.collectAsStateWithLifecycle()
     val discoveredTcpDevices by scanModel.discoveredTcpDevicesForUi.collectAsStateWithLifecycle()
     val recentTcpDevices by scanModel.recentTcpDevicesForUi.collectAsStateWithLifecycle()
@@ -709,6 +712,7 @@ fun ConnectionsScreen(
                                 virtualDevices = virtualDevices,
                                 discoveredTcpDevices = discoveredTcpDevices,
                                 recentTcpDevices = recentTcpDevices,
+                                nodeColors = nodeColors,
                                 isBleScanning = isBleScanning,
                                 isNetworkScanning = isNetworkScanning,
                                 activeTransport = activeTransport,

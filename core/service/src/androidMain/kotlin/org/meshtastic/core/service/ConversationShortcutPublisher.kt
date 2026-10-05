@@ -178,7 +178,7 @@ class ConversationShortcutPublisher(
         // Set it on the shortcut itself (not just the Person) so launchers/Android Auto render it instead of a generic
         // head silhouette.
         val icon = node?.let {
-            val (foregroundColor, backgroundColor) = nodeColorsFromNum(it.num)
+            val (foregroundColor, backgroundColor) = it.colors
             PersonIconFactory.createLabel(shortName ?: label, backgroundColor, foregroundColor, rounded = false)
         }
         val person =

@@ -76,6 +76,7 @@ fun Node.toEntity() = NodeEntity(
     heardOnCurrentLora = heardOnCurrentLora,
     keyMatch = keyMatch,
     newPublicKey = newPublicKey,
+    customColor = customColor,
 )
 
 @Entity(tableName = "metadata", indices = [Index(value = ["num"])])
@@ -163,6 +164,11 @@ data class NodeEntity(
      * [publicKey], have no rejected key to report and stay null.
      */
     @ColumnInfo(name = "new_public_key") var newPublicKey: ByteString? = null,
+    /**
+     * Chip color last seen in this radio's database. The app-wide preference wins; this copies into that preference
+     * the first time this radio is opened, and is ignored once a choice already exists.
+     */
+    @ColumnInfo(name = "custom_color") var customColor: Int? = null,
 ) {
     val deviceMetrics: org.meshtastic.proto.DeviceMetrics?
         get() = deviceTelemetry.device_metrics
@@ -239,5 +245,6 @@ data class NodeEntity(
         heardOnCurrentLora = heardOnCurrentLora,
         keyMatch = keyMatch,
         newPublicKey = newPublicKey,
+        customColor = customColor,
     )
 }

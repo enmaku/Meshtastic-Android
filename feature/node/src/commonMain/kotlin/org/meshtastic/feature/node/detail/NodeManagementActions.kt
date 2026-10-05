@@ -164,4 +164,9 @@ constructor(
         val failure = safeCatching { nodeRepository.setNodeNotes(nodeNum, notes) }.exceptionOrNull()
         if (failure != null) Logger.e(failure) { "Set node notes error" }
     }
+
+    open suspend fun setNodeColor(nodeNum: Int, color: Int?) {
+        val failure = safeCatching { nodeRepository.setNodeColor(nodeNum, color) }.exceptionOrNull()
+        if (failure != null) Logger.e(failure) { "Set node color error" }
+    }
 }

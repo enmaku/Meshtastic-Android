@@ -38,6 +38,8 @@ interface NodeInfoWriteDataSource {
 
     suspend fun setNodeNotes(num: Int, notes: String)
 
+    suspend fun setNodeColor(num: Int, color: Int?)
+
     suspend fun markAllHeardOnCurrentLora()
 
     suspend fun updatePowerChannelLabel(num: Int, channelIndex: Int, label: String)

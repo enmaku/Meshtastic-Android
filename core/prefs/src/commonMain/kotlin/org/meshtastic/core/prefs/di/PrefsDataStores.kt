@@ -91,3 +91,9 @@ interface UiDataStore : DataStore<Preferences>
 
 /** Presents an existing store as [UiDataStore]; the wrapper adds nothing but identity. */
 fun DataStore<Preferences>.asUiDataStore(): UiDataStore = object : UiDataStore, DataStore<Preferences> by this {}
+
+interface NodeColorDataStore : DataStore<Preferences>
+
+/** Presents an existing store as [NodeColorDataStore]; the wrapper adds nothing but identity. */
+fun DataStore<Preferences>.asNodeColorDataStore(): NodeColorDataStore =
+    object : NodeColorDataStore, DataStore<Preferences> by this {}

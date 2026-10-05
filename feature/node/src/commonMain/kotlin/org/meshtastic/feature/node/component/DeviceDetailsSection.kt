@@ -17,6 +17,7 @@
 package org.meshtastic.feature.node.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -51,6 +55,7 @@ import org.meshtastic.core.model.supportTier
 import org.meshtastic.core.resources.Res
 import org.meshtastic.core.resources.ic_unverified
 import org.meshtastic.core.resources.img_hw_unknown
+import org.meshtastic.core.resources.node_color
 import org.meshtastic.core.resources.supported
 import org.meshtastic.core.resources.supported_by_community
 import org.meshtastic.core.resources.supported_by_maker
@@ -71,12 +76,13 @@ internal fun DeviceHeroSection(
     deviceHardware: DeviceHardware,
     reportedTarget: String?,
     modifier: Modifier = Modifier,
+    onAvatarClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DeviceAvatar(bgColor, deviceHardware, size = 80)
+        DeviceAvatar(bgColor, deviceHardware, size = 80, onClick = onAvatarClick)
 
         Spacer(Modifier.width(16.dp))
 
@@ -95,12 +101,26 @@ internal fun DeviceHeroSection(
 }
 
 @Composable
-private fun DeviceAvatar(bgColor: Long, deviceHardware: DeviceHardware, size: Int = 64) {
+private fun DeviceAvatar(
+    bgColor: Long,
+    deviceHardware: DeviceHardware,
+    size: Int = 64,
+    onClick: (() -> Unit)? = null,
+) {
+    val colorDescription = stringResource(Res.string.node_color)
     Box(
         modifier =
         Modifier.size(size.dp)
             .clip(CircleShape)
-            .background(color = Color(bgColor).copy(alpha = .5f), shape = CircleShape),
+            .background(color = Color(bgColor).copy(alpha = .5f), shape = CircleShape)
+            .then(
+                if (onClick == null) {
+                    Modifier
+                } else {
+                    Modifier.semantics { contentDescription = colorDescription }
+                        .clickable(role = Role.Button, onClick = onClick)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         DeviceHardwareImage(deviceHardware, Modifier.fillMaxSize())

@@ -51,6 +51,7 @@ import org.meshtastic.core.model.NodeAddress
 import org.meshtastic.core.model.NodeSortOption
 import org.meshtastic.core.model.matchesSearch
 import org.meshtastic.core.model.util.onlineTimeThreshold
+import org.meshtastic.core.repository.NodeColorPrefs
 import org.meshtastic.core.repository.NodeRepository
 import org.meshtastic.proto.DeviceMetadata
 import org.meshtastic.proto.LocalStats
@@ -65,6 +66,7 @@ class NodeRepositoryImpl(
     private val nodeInfoWriteDataSource: NodeInfoWriteDataSource,
     private val dispatchers: CoroutineDispatchers,
     private val localStatsDataSource: LocalStatsDataSource,
+    private val nodeColorPrefs: NodeColorPrefs,
 ) : NodeRepository {
     /** Hardware info about our local device (can be null if not connected). */
     override val myNodeInfo: StateFlow<MyNodeInfo?> =
@@ -107,9 +109,9 @@ class NodeRepositoryImpl(
      * flows after a recoverable Room pool failure, so this upstream never terminates on a pool wedge (#6608).
      */
     override val nodeDBbyNum: StateFlow<Map<Int, Node>> =
-        nodeInfoReadDataSource
-            .nodeDBbyNumFlow()
-            .mapLatest { map -> map.mapValues { (_, it) -> it.toModel() } }
+        combine(nodeInfoReadDataSource.nodeDBbyNumFlow(), nodeColorPrefs.colors) { map, colors ->
+            map.mapValues { (_, it) -> it.toModel().withAppWideColor(colors) }
+        }
             .flowOn(dispatchers.io)
             .conflate()
             .stateIn(processLifecycle.coroutineScope, SharingStarted.Eagerly, emptyMap())
@@ -121,6 +123,13 @@ class NodeRepositoryImpl(
                 withContext(dispatchers.io) { nodeInfoWriteDataSource.backfillDenormalizedNames() }
             }
         }
+
+        nodeInfoReadDataSource
+            .nodeDBbyNumFlow()
+            .map { rows -> rows.mapNotNull { (num, row) -> row.node.customColor?.let { num to it } }.toMap() }
+            .distinctUntilChanged()
+            .onEach { nodeColorPrefs.importIfAbsent(it) }
+            .launchIn(processLifecycle.coroutineScope)
 
         // Keep ourNodeInfo and myId correctly updated based on current connection and node DB
         combine(nodeDBbyNum, nodeInfoReadDataSource.myNodeInfoFlow()) { db, info -> info?.myNodeNum?.let { db[it] } }
@@ -196,14 +205,17 @@ class NodeRepositoryImpl(
         includeUnknown: Boolean,
         onlyOnline: Boolean,
         onlyDirect: Boolean,
-    ): Flow<List<Node>> = nodeInfoReadDataSource
-        .getNodesFlow(
+    ): Flow<List<Node>> = combine(
+        nodeInfoReadDataSource.getNodesFlow(
             sort = sort.sqlValue,
             includeUnknown = includeUnknown,
             onlyDirect = onlyDirect,
             lastHeardMin = if (onlyOnline) onlineTimeThreshold() else -1,
-        )
-        .mapLatest { list -> list.map { it.toModel() }.filter { node -> node.matchesSearch(filter) } }
+        ),
+        nodeColorPrefs.colors,
+    ) { list, colors ->
+        list.map { it.toModel().withAppWideColor(colors) }.filter { node -> node.matchesSearch(filter) }
+    }
         .flowOn(dispatchers.io)
         .conflate()
 
@@ -231,14 +243,20 @@ class NodeRepositoryImpl(
     override suspend fun deleteNodes(nodeNums: List<Int>) =
         withContext(dispatchers.io) { nodeInfoWriteDataSource.deleteNodesAndMetadata(nodeNums) }
 
-    override suspend fun getNodesOlderThan(lastHeard: Int): List<Node> =
-        withContext(dispatchers.io) { nodeInfoReadDataSource.getNodesOlderThan(lastHeard).map { it.toModel() } }
+    override suspend fun getNodesOlderThan(lastHeard: Int): List<Node> = withContext(dispatchers.io) {
+        val colors = nodeColorPrefs.colors.value
+        nodeInfoReadDataSource.getNodesOlderThan(lastHeard).map { it.toModel().withAppWideColor(colors) }
+    }
 
-    override suspend fun getUnknownNodes(): List<Node> =
-        withContext(dispatchers.io) { nodeInfoReadDataSource.getUnknownNodes().map { it.toModel() } }
+    override suspend fun getUnknownNodes(): List<Node> = withContext(dispatchers.io) {
+        val colors = nodeColorPrefs.colors.value
+        nodeInfoReadDataSource.getUnknownNodes().map { it.toModel().withAppWideColor(colors) }
+    }
 
-    override suspend fun getNodeDbSnapshot(): Map<Int, Node> =
-        withContext(dispatchers.io) { nodeInfoReadDataSource.getNodeDbSnapshot().mapValues { (_, it) -> it.toModel() } }
+    override suspend fun getNodeDbSnapshot(): Map<Int, Node> = withContext(dispatchers.io) {
+        val colors = nodeColorPrefs.colors.value
+        nodeInfoReadDataSource.getNodeDbSnapshot().mapValues { (_, it) -> it.toModel().withAppWideColor(colors) }
+    }
 
     /** Persists hardware metadata for a node. */
     override suspend fun insertMetadata(nodeNum: Int, metadata: DeviceMetadata) =
@@ -263,6 +281,9 @@ class NodeRepositoryImpl(
     override suspend fun setNodeNotes(num: Int, notes: String) =
         withContext(dispatchers.io) { nodeInfoWriteDataSource.setNodeNotes(num, notes) }
 
+    override suspend fun setNodeColor(num: Int, color: Int?) =
+        withContext(dispatchers.io) { nodeColorPrefs.setColor(num, color) }
+
     override suspend fun markAllHeardOnCurrentLora() =
         withContext(dispatchers.io) { nodeInfoWriteDataSource.markAllHeardOnCurrentLora() }
 
@@ -284,3 +305,6 @@ class NodeRepositoryImpl(
         pioEnv = pioEnv,
     )
 }
+
+private fun Node.withAppWideColor(colors: Map<Int, Int?>): Node =
+    if (num in colors) copy(customColor = colors[num]) else this

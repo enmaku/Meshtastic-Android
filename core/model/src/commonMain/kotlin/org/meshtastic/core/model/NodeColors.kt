@@ -36,8 +36,19 @@ fun nodeColorsFromNum(nodeNum: Int): Pair<Int, Int> {
     val r = (nodeNum and RED_MASK) shr RED_SHIFT
     val g = (nodeNum and GREEN_MASK) shr GREEN_SHIFT
     val b = nodeNum and BLUE_MASK
+    val background = (ALPHA_MASK shl ALPHA_SHIFT) or (r shl RED_SHIFT) or (g shl GREEN_SHIFT) or b
+    return nodeColorPair(background)
+}
+
+/**
+ * (foreground, opaque background) for a chosen color. Foreground is black or white from the background's brightness.
+ */
+fun nodeColorPair(background: Int): Pair<Int, Int> {
+    val r = (background and RED_MASK) shr RED_SHIFT
+    val g = (background and GREEN_MASK) shr GREEN_SHIFT
+    val b = background and BLUE_MASK
     val brightness = ((r * RED_WEIGHT) + (g * GREEN_WEIGHT) + (b * BLUE_WEIGHT)) / MAX_CHANNEL
     val foreground = if (brightness > BRIGHTNESS_THRESHOLD) BLACK else WHITE
-    val background = (ALPHA_MASK shl ALPHA_SHIFT) or (r shl RED_SHIFT) or (g shl GREEN_SHIFT) or b
-    return foreground to background
+    val opaque = (ALPHA_MASK shl ALPHA_SHIFT) or (r shl RED_SHIFT) or (g shl GREEN_SHIFT) or b
+    return foreground to opaque
 }

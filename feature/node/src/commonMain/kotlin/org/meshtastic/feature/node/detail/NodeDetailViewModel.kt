@@ -269,6 +269,10 @@ class NodeDetailViewModel(
         safeLaunch(tag = "setNodeNotes") { nodeManagementActions.setNodeNotes(nodeNum, notes) }
     }
 
+    fun setNodeColor(nodeNum: Int, color: Int?) {
+        safeLaunch(tag = "setNodeColor") { nodeManagementActions.setNodeColor(nodeNum, color) }
+    }
+
     /** Returns the type-safe navigation route for a direct message to this node. */
     fun getDirectMessageRoute(node: Node, ourNode: Node?): String {
         val hasPKC = ourNode?.hasPKC == true && node.hasPKC

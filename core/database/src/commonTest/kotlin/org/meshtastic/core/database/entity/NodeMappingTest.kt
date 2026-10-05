@@ -95,6 +95,7 @@ internal fun fullyPopulatedNode(): Node {
         lastTransport = 1,
         keyMatch = false,
         newPublicKey = refusedKey,
+        customColor = 0xFF112233.toInt(),
     )
 }
 

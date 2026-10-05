@@ -59,6 +59,7 @@ fun NodeDetailContent(
     onSaveNotes: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
+    onSaveColor: (Int, Int?) -> Unit = { _, _ -> },
 ) {
     Crossfade(targetState = uiState.node != null, label = "NodeDetailContent", modifier = modifier) { isNodePresent ->
         if (isNodePresent && uiState.node != null) {
@@ -70,6 +71,7 @@ fun NodeDetailContent(
                 onAction = onAction,
                 onFirmwareSelect = onFirmwareSelect,
                 onSaveNotes = onSaveNotes,
+                onSaveColor = onSaveColor,
             )
         } else {
             val loadingDescription = stringResource(Res.string.loading)
@@ -93,6 +95,7 @@ fun NodeDetailList(
     onAction: (NodeDetailAction) -> Unit,
     onFirmwareSelect: (FirmwareRelease) -> Unit,
     onSaveNotes: (Int, String) -> Unit,
+    onSaveColor: (Int, Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -110,6 +113,7 @@ fun NodeDetailList(
                 onRequestUserInfo = {
                     onAction(NodeDetailAction.HandleNodeMenuAction(NodeMenuAction.RequestUserInfo(node)))
                 },
+                onPickColor = onSaveColor,
             )
         }
         if (uiState.metricsState.deviceLinks.isNotEmpty()) {

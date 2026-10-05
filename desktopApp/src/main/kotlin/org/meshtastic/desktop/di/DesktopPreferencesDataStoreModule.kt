@@ -39,6 +39,7 @@ import org.meshtastic.core.prefs.di.MapDataStore
 import org.meshtastic.core.prefs.di.MapTileProviderDataStore
 import org.meshtastic.core.prefs.di.MeshDataStore
 import org.meshtastic.core.prefs.di.MeshLogDataStore
+import org.meshtastic.core.prefs.di.NodeColorDataStore
 import org.meshtastic.core.prefs.di.RadioDataStore
 import org.meshtastic.core.prefs.di.UiDataStore
 import org.meshtastic.core.prefs.di.asAnalyticsDataStore
@@ -51,6 +52,7 @@ import org.meshtastic.core.prefs.di.asMapDataStore
 import org.meshtastic.core.prefs.di.asMapTileProviderDataStore
 import org.meshtastic.core.prefs.di.asMeshDataStore
 import org.meshtastic.core.prefs.di.asMeshLogDataStore
+import org.meshtastic.core.prefs.di.asNodeColorDataStore
 import org.meshtastic.core.prefs.di.asRadioDataStore
 import org.meshtastic.core.prefs.di.asUiDataStore
 
@@ -94,6 +96,10 @@ class DesktopPreferencesDataStoreModule {
 
     @Single
     fun filterDataStore(scope: DataStoreScope): FilterDataStore = prefsStore("filter", scope).asFilterDataStore()
+
+    @Single
+    fun nodeColorDataStore(scope: DataStoreScope): NodeColorDataStore =
+        prefsStore("node_color", scope).asNodeColorDataStore()
 
     @Single
     fun corePreferencesDataStore(scope: DataStoreScope): CorePreferencesDataStore =

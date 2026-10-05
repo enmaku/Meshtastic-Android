@@ -29,6 +29,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.meshtastic.core.data.repository.MemoryNodeColorPrefs
 import org.meshtastic.core.data.repository.NodeRepositoryImpl
 import org.meshtastic.core.database.DatabaseProvider
 import org.meshtastic.core.database.MeshtasticDatabase
@@ -78,6 +79,7 @@ class NodeDeletionDatabaseSwitchTest {
                 nodeInfoWriteDataSource = writeDataSourceWithoutStartupBackfill,
                 dispatchers = dispatchers,
                 localStatsDataSource = FakeLocalStatsDataSource(),
+                nodeColorPrefs = MemoryNodeColorPrefs(),
             )
         provider.arm()
     }

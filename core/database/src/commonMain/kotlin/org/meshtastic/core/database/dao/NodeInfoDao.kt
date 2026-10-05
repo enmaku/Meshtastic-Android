@@ -120,6 +120,7 @@ interface NodeInfoDao {
      */
     private suspend fun migrateNodeIdentity(from: NodeEntity, to: NodeEntity) {
         if (to.notes.isBlank()) to.notes = from.notes
+        if (to.customColor == null) to.customColor = from.customColor
         if (to.powerChannelLabels.isEmpty()) to.powerChannelLabels = from.powerChannelLabels
         to.manuallyVerified = to.manuallyVerified || from.manuallyVerified
         to.isFavorite = to.isFavorite || from.isFavorite
@@ -232,6 +233,7 @@ interface NodeInfoDao {
         trustIncomingKey: Boolean = false,
     ): NodeEntity {
         val resolvedNotes = incomingNode.notes.ifBlank { existingNode.notes }
+        val resolvedCustomColor = incomingNode.customColor ?: existingNode.customColor
         val resolvedPowerChannelLabels = incomingNode.powerChannelLabels.ifEmpty { existingNode.powerChannelLabels }
 
         val isPlaceholder = incomingNode.user.hw_model == HardwareModel.UNSET
@@ -248,6 +250,7 @@ interface NodeInfoDao {
                 shortName = existingNode.shortName,
                 manuallyVerified = existingNode.manuallyVerified,
                 notes = resolvedNotes,
+                customColor = resolvedCustomColor,
                 powerChannelLabels = resolvedPowerChannelLabels,
             )
         }
@@ -267,6 +270,7 @@ interface NodeInfoDao {
             keyMatch = resolved.keyMatch,
             newPublicKey = resolved.newPublicKey,
             notes = resolvedNotes,
+            customColor = resolvedCustomColor,
             powerChannelLabels = resolvedPowerChannelLabels,
         )
     }
@@ -466,6 +470,9 @@ interface NodeInfoDao {
 
     @Query("UPDATE nodes SET notes = :notes WHERE num = :num")
     suspend fun setNodeNotes(num: Int, notes: String)
+
+    @Query("UPDATE nodes SET custom_color = :color WHERE num = :num")
+    suspend fun setNodeColor(num: Int, color: Int?)
 
     @Query("UPDATE nodes SET power_channel_labels = :labels WHERE num = :num")
     suspend fun setPowerChannelLabels(num: Int, labels: List<String>)

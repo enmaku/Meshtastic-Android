@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.meshtastic.core.model.ConnectionState
+import org.meshtastic.core.model.Node
 import org.meshtastic.core.resources.Res
 import org.meshtastic.core.resources.action_select_device
 import org.meshtastic.core.resources.add
@@ -64,7 +66,12 @@ import org.meshtastic.core.ui.icon.BluetoothSearching
 import org.meshtastic.core.ui.icon.MeshtasticIcons
 import org.meshtastic.core.ui.icon.Usb
 import org.meshtastic.core.ui.icon.Wifi
+import org.meshtastic.feature.connections.model.AdvertisedNodeColor
 import org.meshtastic.feature.connections.model.DeviceListEntry
+import org.meshtastic.feature.connections.model.uniqueCustomColorForAdvertisedName
+import org.meshtastic.proto.User
+
+internal val LocalNodeColors = staticCompositionLocalOf<Map<Int, Int?>> { emptyMap() }
 
 private const val RSSI_UPDATE_RATE_MS = 2000L
 
@@ -174,20 +181,32 @@ fun DeviceListItem(
 /**
  * Headline for a device row. When we have a [DeviceListEntry.node] in the local DB (i.e. we've previously connected and
  * learned the device's mesh identity), render the colored [NodeChip] alongside the node's **long name** so users can
- * distinguish devices that share a similar short/advertised name (see #5808). Otherwise fall back to the raw advertised
- * name. The name is allowed to wrap to two lines so long names are legible rather than truncated at a single line.
+ * distinguish devices that share a similar short/advertised name (see #5808). Otherwise, if exactly one saved color
+ * matches the name's four hex digits, show that chip next to the advertised name. The name wraps to two lines.
  */
 @Composable
 private fun DeviceHeadline(device: DeviceListEntry) {
     val node = device.node
+    val advertised =
+        if (node == null) uniqueCustomColorForAdvertisedName(device.name, LocalNodeColors.current) else null
     if (node != null) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NodeChip(node = node)
             DeviceName(text = node.user.long_name.ifBlank { device.name }, modifier = Modifier.weight(1f))
         }
+    } else if (advertised != null) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NodeChip(node = advertised.toChipNode())
+            DeviceName(text = device.name, modifier = Modifier.weight(1f))
+        }
     } else {
         DeviceName(text = device.name)
     }
+}
+
+private fun AdvertisedNodeColor.toChipNode(): Node {
+    val user = User.Builder().also { wb -> wb.short_name = suffix }.build()
+    return Node(num = num, user = user, customColor = color)
 }
 
 @Composable

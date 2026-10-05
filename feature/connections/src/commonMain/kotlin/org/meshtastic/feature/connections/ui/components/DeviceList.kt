@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldLabelPosition
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -122,6 +123,7 @@ fun DeviceList(
     onRemoveRecentAddress: (DeviceListEntry) -> Unit,
     modifier: Modifier = Modifier,
     virtualDevices: List<DeviceListEntry> = emptyList(),
+    nodeColors: Map<Int, Int?> = emptyMap(),
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     val sheetState =
@@ -146,46 +148,48 @@ fun DeviceList(
         )
     }
 
-    LazyColumn(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        when (activeTransport) {
-            DeviceType.BLE ->
-                bluetoothSection(
-                    bleDevices = bleDevices,
-                    connectionState = connectionState,
-                    selectedDevice = selectedDevice,
-                    isBleScanning = isBleScanning,
-                    onSelectDevice = onSelectDevice,
-                    onToggleBleScan = onToggleBleScan,
-                )
+    CompositionLocalProvider(LocalNodeColors provides nodeColors) {
+        LazyColumn(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            when (activeTransport) {
+                DeviceType.BLE ->
+                    bluetoothSection(
+                        bleDevices = bleDevices,
+                        connectionState = connectionState,
+                        selectedDevice = selectedDevice,
+                        isBleScanning = isBleScanning,
+                        onSelectDevice = onSelectDevice,
+                        onToggleBleScan = onToggleBleScan,
+                    )
 
-            DeviceType.TCP ->
-                networkSection(
-                    discoveredTcpDevices = discoveredTcpDevices,
-                    recentTcpDevices = recentTcpDevices,
-                    connectionState = connectionState,
-                    selectedDevice = selectedDevice,
-                    isNetworkScanning = isNetworkScanning,
-                    onSelectDevice = onSelectDevice,
-                    onToggleNetworkScan = onToggleNetworkScan,
-                    onAddManually = { showAddDialog = true },
-                    onRemoveRecentAddress = onRemoveRecentAddress,
-                )
+                DeviceType.TCP ->
+                    networkSection(
+                        discoveredTcpDevices = discoveredTcpDevices,
+                        recentTcpDevices = recentTcpDevices,
+                        connectionState = connectionState,
+                        selectedDevice = selectedDevice,
+                        isNetworkScanning = isNetworkScanning,
+                        onSelectDevice = onSelectDevice,
+                        onToggleNetworkScan = onToggleNetworkScan,
+                        onAddManually = { showAddDialog = true },
+                        onRemoveRecentAddress = onRemoveRecentAddress,
+                    )
 
-            DeviceType.USB ->
-                usbSection(
-                    usbDevices = usbDevices,
+                DeviceType.USB ->
+                    usbSection(
+                        usbDevices = usbDevices,
+                        connectionState = connectionState,
+                        selectedDevice = selectedDevice,
+                        onSelectDevice = onSelectDevice,
+                    )
+            }
+            if (virtualDevices.isNotEmpty()) {
+                virtualSection(
+                    virtualDevices = virtualDevices,
                     connectionState = connectionState,
                     selectedDevice = selectedDevice,
                     onSelectDevice = onSelectDevice,
                 )
-        }
-        if (virtualDevices.isNotEmpty()) {
-            virtualSection(
-                virtualDevices = virtualDevices,
-                connectionState = connectionState,
-                selectedDevice = selectedDevice,
-                onSelectDevice = onSelectDevice,
-            )
+            }
         }
     }
 }

@@ -118,6 +118,11 @@ class CorePrefsAndroidModule {
     fun provideFilterDataStore(context: Context, dispatchers: CoroutineDispatchers): FilterDataStore =
         createPreferencesDataStore(context, dispatchers, legacyName = "filter-prefs", fileName = "filter_ds")
             .asFilterDataStore()
+
+    @Single
+    fun provideNodeColorDataStore(context: Context, dispatchers: CoroutineDispatchers): NodeColorDataStore =
+        createPreferencesDataStore(context, dispatchers, legacyName = "node-color-prefs", fileName = "node_color_ds")
+            .asNodeColorDataStore()
 }
 
 /**

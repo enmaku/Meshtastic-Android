@@ -131,6 +131,7 @@ abstract class CommonNodeIdentityMigrationDaoTest {
     fun renumberMigratesHistoryAndLocalState() = runTest {
         createDb(myNodeEntity(oldNum))
         dao.upsert(nodeEntity(oldNum, keyA, notes = "my notes", isFavorite = true))
+        dao.setNodeColor(oldNum, 0xFFFF0000.toInt())
         packetDao.insert(packet(oldNum, contactKey = "0$oldId")) // note-to-self thread
         packetDao.insert(packet(oldNum, contactKey = "1!deadbeef")) // DM with a peer
         packetDao.insert(
@@ -148,6 +149,7 @@ abstract class CommonNodeIdentityMigrationDaoTest {
 
         val newSelf = assertNotNull(dao.getNodeByNum(newNum)).node
         assertEquals("my notes", newSelf.notes, "app-local notes must follow the device")
+        assertEquals(0xFFFF0000.toInt(), newSelf.customColor, "app-local color must follow the device")
         assertTrue(newSelf.isFavorite, "favorite flag must follow the device")
 
         val packets = packetDao.getAllPacketsSnapshot()
@@ -281,5 +283,20 @@ abstract class CommonNodeIdentityMigrationDaoTest {
 
         assertNotNull(dao.getNodeByNum(peerOldNum), "existing identity must be kept on mesh-time conflicts")
         assertNull(dao.getNodeByNum(peerNewNum), "mesh-time claimant must not be inserted")
+    }
+
+    @Test
+    fun customColorPersistsAcrossClearAndMeshUpdate() = runTest {
+        createDb(myNodeEntity(oldNum))
+        dao.upsert(nodeEntity(oldNum, keyA))
+        val red = 0xFFFF0000.toInt()
+        dao.setNodeColor(oldNum, red)
+        assertEquals(red, assertNotNull(dao.getNodeByNum(oldNum)).node.customColor)
+
+        dao.upsert(nodeEntity(oldNum, keyA, longName = "heard again"))
+        assertEquals(red, assertNotNull(dao.getNodeByNum(oldNum)).node.customColor, "a mesh update must keep the color")
+
+        dao.setNodeColor(oldNum, null)
+        assertNull(assertNotNull(dao.getNodeByNum(oldNum)).node.customColor)
     }
 }
