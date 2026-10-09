@@ -25,6 +25,7 @@ import org.meshtastic.core.database.entity.NodeEntity
 import org.meshtastic.core.di.CoroutineDispatchers
 
 @Single
+@Suppress("TooManyFunctions")
 class SwitchingNodeInfoWriteDataSource(
     private val dbManager: DatabaseProvider,
     private val dispatchers: CoroutineDispatchers,

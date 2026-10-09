@@ -70,28 +70,27 @@ class NodeColorPrefsImpl(private val dataStore: NodeColorDataStore, dispatchers:
 }
 
 internal fun encodeNodeColors(colors: Map<Int, Int?>): String = colors.entries.joinToString("\n") { (num, color) ->
-    val payload = color?.toUInt()?.toString(16) ?: CLEARED
+    val payload = color?.toUInt()?.toString(HEX_RADIX) ?: CLEARED
     "$num=$payload"
 }
 
-internal fun decodeNodeColors(raw: String): Map<Int, Int?> {
-    if (raw.isEmpty()) return emptyMap()
-    val colors = LinkedHashMap<Int, Int?>()
-    for (line in raw.split('\n')) {
-        val eq = line.indexOf('=')
-        if (eq <= 0) continue
-        val rawNum = line.substring(0, eq).toIntOrNull() ?: continue
-        val num = nodeColorKey(rawNum)
-        val payload = line.substring(eq + 1)
-        val color =
-            if (payload == CLEARED) {
-                null
-            } else {
-                payload.toUIntOrNull(16)?.toInt() ?: continue
-            }
-        colors[num] = color
-    }
-    return colors
+internal fun decodeNodeColors(raw: String): Map<Int, Int?> =
+    if (raw.isEmpty()) emptyMap() else raw.split('\n').mapNotNull(::parseNodeColorLine).toMap(LinkedHashMap())
+
+@Suppress("ReturnCount")
+private fun parseNodeColorLine(line: String): Pair<Int, Int?>? {
+    val eq = line.indexOf('=')
+    if (eq <= 0) return null
+    val rawNum = line.substring(0, eq).toIntOrNull() ?: return null
+    val num = nodeColorKey(rawNum)
+    val payload = line.substring(eq + 1)
+    val color =
+        when {
+            payload == CLEARED -> null
+            else -> payload.toUIntOrNull(HEX_RADIX)?.toInt() ?: return null
+        }
+    return num to color
 }
 
 private const val CLEARED = "-"
+private const val HEX_RADIX = 16

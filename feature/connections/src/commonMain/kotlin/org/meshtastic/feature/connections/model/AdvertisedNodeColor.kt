@@ -23,11 +23,13 @@ internal data class AdvertisedNodeColor(val num: Int, val color: Int, val suffix
 
 private val advertisedName = Regex(BLE_NAME_PATTERN)
 
+private const val HEX_RADIX = 16
+
 /** The saved color for [name]. [colors] is keyed by the same four hex digits as the Bluetooth suffix. */
 internal fun uniqueCustomColorForAdvertisedName(name: String, colors: Map<Int, Int?>): AdvertisedNodeColor? {
     val suffix = advertisedName.find(name)?.groupValues?.get(1) ?: return null
-    val suffixValue = suffix.toInt(16)
-    if (suffixValue !in colors) return null
-    val color = colors[suffixValue] ?: return null
-    return AdvertisedNodeColor(num = suffixValue, color = color, suffix = suffix.uppercase())
+    val suffixValue = suffix.toInt(HEX_RADIX)
+    return colors[suffixValue]?.let { color ->
+        AdvertisedNodeColor(num = suffixValue, color = color, suffix = suffix.uppercase())
+    }
 }

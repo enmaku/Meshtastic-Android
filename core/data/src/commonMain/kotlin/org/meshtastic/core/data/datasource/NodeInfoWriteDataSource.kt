@@ -20,6 +20,7 @@ import org.meshtastic.core.database.entity.MetadataEntity
 import org.meshtastic.core.database.entity.MyNodeEntity
 import org.meshtastic.core.database.entity.NodeEntity
 
+@Suppress("TooManyFunctions")
 interface NodeInfoWriteDataSource {
     suspend fun upsert(node: NodeEntity)
 
