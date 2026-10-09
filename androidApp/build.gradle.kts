@@ -214,6 +214,11 @@ androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
         variant.flavorName?.let { flavor -> variant.applicationId.set("com.geeksville.mesh.$flavor.debug") }
     }
+    // Release keeps the stock id, which is the Play Store app, so a sideload cannot be installed
+    // next to it. The flavor name makes this build its own app.
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.flavorName?.let { flavor -> variant.applicationId.set("com.geeksville.mesh.$flavor") }
+    }
 }
 
 dependencies {

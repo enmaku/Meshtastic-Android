@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import org.koin.core.annotation.Single
 import org.meshtastic.core.di.CoroutineDispatchers
+import org.meshtastic.core.model.nodeColorKey
 import org.meshtastic.core.prefs.di.NodeColorDataStore
 import org.meshtastic.core.repository.NodeColorPrefs
 
@@ -42,7 +43,7 @@ class NodeColorPrefsImpl(private val dataStore: NodeColorDataStore, dispatchers:
     override suspend fun setColor(num: Int, color: Int?) {
         dataStore.edit { prefs ->
             val current = decodeNodeColors(prefs[KEY].orEmpty()).toMutableMap()
-            current[num] = color
+            current[nodeColorKey(num)] = color
             prefs[KEY] = encodeNodeColors(current)
         }
     }
@@ -53,8 +54,9 @@ class NodeColorPrefsImpl(private val dataStore: NodeColorDataStore, dispatchers:
             val current = decodeNodeColors(prefs[KEY].orEmpty()).toMutableMap()
             var changed = false
             for ((num, color) in entries) {
-                if (num !in current) {
-                    current[num] = color
+                val key = nodeColorKey(num)
+                if (key !in current) {
+                    current[key] = color
                     changed = true
                 }
             }
@@ -78,7 +80,8 @@ internal fun decodeNodeColors(raw: String): Map<Int, Int?> {
     for (line in raw.split('\n')) {
         val eq = line.indexOf('=')
         if (eq <= 0) continue
-        val num = line.substring(0, eq).toIntOrNull() ?: continue
+        val rawNum = line.substring(0, eq).toIntOrNull() ?: continue
+        val num = nodeColorKey(rawNum)
         val payload = line.substring(eq + 1)
         val color =
             if (payload == CLEARED) {

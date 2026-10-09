@@ -18,27 +18,16 @@ package org.meshtastic.feature.connections.model
 
 import org.meshtastic.core.ble.MeshtasticBleConstants.BLE_NAME_PATTERN
 
-/** A saved chip color whose node number ends with the same four hex digits as a Bluetooth name. */
+/** A saved chip color for the four hex digits in a Bluetooth name. */
 internal data class AdvertisedNodeColor(val num: Int, val color: Int, val suffix: String)
 
 private val advertisedName = Regex(BLE_NAME_PATTERN)
-private const val SUFFIX_BITS = 0xFFFFu
 
-/**
- * The saved color for [name], when exactly one non-null entry in [colors] shares its four-digit suffix.
- *
- * Two colored nodes can share those digits. Showing neither is safer than guessing.
- */
+/** The saved color for [name]. [colors] is keyed by the same four hex digits as the Bluetooth suffix. */
 internal fun uniqueCustomColorForAdvertisedName(name: String, colors: Map<Int, Int?>): AdvertisedNodeColor? {
     val suffix = advertisedName.find(name)?.groupValues?.get(1) ?: return null
     val suffixValue = suffix.toInt(16)
-    return colors
-        .mapNotNull { (num, color) ->
-            if (color == null || (num.toUInt() and SUFFIX_BITS).toInt() != suffixValue) {
-                null
-            } else {
-                AdvertisedNodeColor(num = num, color = color, suffix = suffix.uppercase())
-            }
-        }
-        .singleOrNull()
+    if (suffixValue !in colors) return null
+    val color = colors[suffixValue] ?: return null
+    return AdvertisedNodeColor(num = suffixValue, color = color, suffix = suffix.uppercase())
 }

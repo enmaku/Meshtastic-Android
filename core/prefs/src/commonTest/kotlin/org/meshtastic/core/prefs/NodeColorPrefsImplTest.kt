@@ -84,10 +84,22 @@ class NodeColorPrefsImplTest {
     }
 
     @Test
-    fun `negative node numbers round trip`() = testScope.runTest {
-        val num = -12345
-        val yellow = 0xFFFFFF00.toInt()
-        prefs.setColor(num, yellow)
-        assertEquals(yellow, prefs.colors.value[num])
+    fun `full node ids share one slot for their last four hex digits`() = testScope.runTest {
+        val purple = 0xFF9C27B0.toInt()
+        val blue = 0xFF4488CC.toInt()
+        val focusDisorder = 0xBA5B1889.toInt()
+        prefs.setColor(focusDisorder, purple)
+        assertEquals(purple, prefs.colors.value[0x1889])
+
+        prefs.setColor(0x00C41889, blue)
+        assertEquals(blue, prefs.colors.value[0x1889])
+        assertEquals(1, prefs.colors.value.size)
+    }
+
+    @Test
+    fun `a stored full node id is read back as its last four hex digits`() {
+        val purple = 0xFF9C27B0.toInt()
+        val decoded = decodeNodeColors("${0xBA5B1889.toInt()}=${purple.toUInt().toString(16)}")
+        assertEquals(mapOf(0x1889 to purple), decoded)
     }
 }

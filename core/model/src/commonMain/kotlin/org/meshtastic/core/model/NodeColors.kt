@@ -30,6 +30,14 @@ private const val GREEN_SHIFT = 8
 private const val ALPHA_SHIFT = 24
 private const val BLACK = 0xFF000000.toInt()
 private const val WHITE = 0xFFFFFFFF.toInt()
+private const val COLOR_KEY_MASK = 0xFFFFu
+
+/**
+ * Color identity for [nodeNum]: the low 16 bits, the same four hex digits as a Bluetooth name suffix.
+ *
+ * `!ba5b1889` and `B_1889` are both `0x1889`.
+ */
+fun nodeColorKey(nodeNum: Int): Int = (nodeNum.toUInt() and COLOR_KEY_MASK).toInt()
 
 /** Derives a unique color pair from a node number. Returns (foreground, background) as @ColorInt. */
 fun nodeColorsFromNum(nodeNum: Int): Pair<Int, Int> {

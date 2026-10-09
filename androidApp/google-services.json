@@ -53,6 +53,19 @@
       "client_info": {
         "mobilesdk_app_id": "1:xxx:android:1111",
         "android_client_info": {
+          "package_name": "com.geeksville.mesh.google"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "APlaceholderAPIKeyWith-ThirtyNineCharsX"
+        }
+      ]
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:xxx:android:1111",
+        "android_client_info": {
           "package_name": "com.geeksville.mesh.google.debug"
         }
       },

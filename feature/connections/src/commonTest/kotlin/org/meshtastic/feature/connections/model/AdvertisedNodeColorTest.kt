@@ -22,11 +22,10 @@ import kotlin.test.assertNull
 
 class AdvertisedNodeColorTest {
     @Test
-    fun `a unique saved color matches the last four hex digits of the node number`() {
-        val num = 0xBA5B1889.toInt()
+    fun `a saved color is the four hex digits of the bluetooth name`() {
         val red = 0xFFFF0000.toInt()
-        val match = uniqueCustomColorForAdvertisedName("Meshtastic_1889", mapOf(num to red))
-        assertEquals(AdvertisedNodeColor(num = num, color = red, suffix = "1889"), match)
+        val match = uniqueCustomColorForAdvertisedName("Meshtastic_1889", mapOf(0x1889 to red))
+        assertEquals(AdvertisedNodeColor(num = 0x1889, color = red, suffix = "1889"), match)
     }
 
     @Test
@@ -42,19 +41,10 @@ class AdvertisedNodeColorTest {
     }
 
     @Test
-    fun `two saved colors with the same suffix are not shown`() {
-        val red = 0xFFFF0000.toInt()
+    fun `the four digit key is the only key`() {
         val blue = 0xFF0000FF.toInt()
-        val colors = mapOf(0x11111889 to red, 0x22221889 to blue)
-        assertNull(uniqueCustomColorForAdvertisedName("Meshtastic_1889", colors))
-    }
-
-    @Test
-    fun `a negative node number still matches its low sixteen bits`() {
-        val num = 0xFFFF1889.toInt()
-        val black = 0xFF000000.toInt()
-        val match = uniqueCustomColorForAdvertisedName("Meshtastic_1889", mapOf(num to black))
-        assertEquals(num, match?.num)
-        assertEquals(black, match?.color)
+        val match = uniqueCustomColorForAdvertisedName("B_1889", mapOf(0x1889 to blue))
+        assertEquals(blue, match?.color)
+        assertNull(uniqueCustomColorForAdvertisedName("B_1889", mapOf(0xBA5B1889.toInt() to blue)))
     }
 }

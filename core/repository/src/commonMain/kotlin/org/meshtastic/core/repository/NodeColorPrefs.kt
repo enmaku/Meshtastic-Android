@@ -21,8 +21,9 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Chip colors for nodes, stored once for the whole app.
  *
- * Keyed by node number, which is the same node on every radio. A missing key means "not chosen here yet" and may be
- * filled from a radio database. A present null means the generated color should be used.
+ * Keys are [org.meshtastic.core.model.nodeColorKey] values, the low 16 bits of the node number. A missing key means
+ * "not chosen here yet" and may be filled from a radio database. A present null means the generated color should be
+ * used.
  */
 interface NodeColorPrefs {
     val colors: StateFlow<Map<Int, Int?>>

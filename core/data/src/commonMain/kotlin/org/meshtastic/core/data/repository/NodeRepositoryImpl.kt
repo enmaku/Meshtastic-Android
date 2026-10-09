@@ -50,6 +50,7 @@ import org.meshtastic.core.model.Node
 import org.meshtastic.core.model.NodeAddress
 import org.meshtastic.core.model.NodeSortOption
 import org.meshtastic.core.model.matchesSearch
+import org.meshtastic.core.model.nodeColorKey
 import org.meshtastic.core.model.util.onlineTimeThreshold
 import org.meshtastic.core.repository.NodeColorPrefs
 import org.meshtastic.core.repository.NodeRepository
@@ -306,5 +307,7 @@ class NodeRepositoryImpl(
     )
 }
 
-private fun Node.withAppWideColor(colors: Map<Int, Int?>): Node =
-    if (num in colors) copy(customColor = colors[num]) else this
+private fun Node.withAppWideColor(colors: Map<Int, Int?>): Node {
+    val key = nodeColorKey(num)
+    return if (key in colors) copy(customColor = colors[key]) else this
+}

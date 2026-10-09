@@ -142,4 +142,15 @@ abstract class CommonNodeRepositoryTest {
         nodeDbFlow.value = mapOf(nodeNum to NodeWithRelations(NodeEntity(num = nodeNum, customColor = red), null))
         assertNull(repository.nodeDBbyNum.value[nodeNum]?.customColor)
     }
+
+    @Test
+    fun `a color saved for one node id applies to every node id with those last four digits`() =
+        runTest(testDispatcher) {
+            val blue = 0xFF4488CC.toInt()
+            val focusDisorder = 0xBA5B1889.toInt()
+            repository.setNodeColor(focusDisorder, blue)
+
+            nodeDbFlow.value = mapOf(0x00C41889 to NodeWithRelations(NodeEntity(num = 0x00C41889), null))
+            assertEquals(blue, repository.nodeDBbyNum.value[0x00C41889]?.customColor)
+        }
 }

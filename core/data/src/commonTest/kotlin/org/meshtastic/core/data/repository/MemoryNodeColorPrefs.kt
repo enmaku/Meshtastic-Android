@@ -18,6 +18,7 @@ package org.meshtastic.core.data.repository
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.meshtastic.core.model.nodeColorKey
 import org.meshtastic.core.repository.NodeColorPrefs
 
 class MemoryNodeColorPrefs : NodeColorPrefs {
@@ -26,11 +27,11 @@ class MemoryNodeColorPrefs : NodeColorPrefs {
     override val colors: StateFlow<Map<Int, Int?>> = stored
 
     override suspend fun setColor(num: Int, color: Int?) {
-        stored.value = stored.value + (num to color)
+        stored.value = stored.value + (nodeColorKey(num) to color)
     }
 
     override suspend fun importIfAbsent(entries: Map<Int, Int>) {
-        val additions = entries.filterKeys { it !in stored.value }
+        val additions = entries.mapKeys { (num, _) -> nodeColorKey(num) }.filterKeys { it !in stored.value }
         if (additions.isNotEmpty()) stored.value = stored.value + additions
     }
 }
