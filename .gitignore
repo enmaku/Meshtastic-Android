@@ -65,6 +65,11 @@ firebase-debug.log
 # Firebase Studio / Antigravity auto-provisioned skills — not used by this project
 .agents/
 
+# Matt Pocock skills install and setup output (local only)
+skills-lock.json
+docs/agents/
+/AGENTS.md
+
 # JVM crash dumps (desktopApp test runs) — regenerable, and untracked paths leak into public Build Scans
 hs_err_pid*.log
 replay_pid*.log
