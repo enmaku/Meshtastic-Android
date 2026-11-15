@@ -1,6 +1,7 @@
 ---
 name: project-overview
 description: The Meshtastic-Android codebase map - module directory, namespacing conventions, JDK and SDK requirements, and the mandatory bootstrap steps. Read this first in any session that will build, test or navigate the repo: the bootstrap here has to run before any Gradle task, and skipping it is what makes the first build fail.
+model: haiku
 ---
 
 # Skill: Project Overview & Codebase Map

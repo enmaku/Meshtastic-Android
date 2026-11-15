@@ -1,6 +1,7 @@
 ---
 name: run-meshtastic-android
 description: Run, launch, drive, and screenshot the Meshtastic app — the Compose Desktop app via hot reload (semantic clicks, live reload, window screenshots) or the Android app on an emulator (scripted deeplink bring-up, uiautomator taps, screencap). Use when asked to run the app, verify a UI change in the real app, take a screenshot, or exercise a flow end to end against a simulated radio.
+model: haiku
 ---
 
 # Run Meshtastic (Desktop & Emulator)

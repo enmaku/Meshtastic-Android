@@ -1,6 +1,7 @@
 ---
 name: speckit
 description: The Spec Kit specification-driven workflow in Meshtastic-Android - how a feature description becomes a spec, a plan, tasks and an implementation, and what the constitution requires at each step. Use this when asked to write or update a spec, plan or tasks file, or when working anywhere under `specs/`.
+model: haiku
 ---
 
 # Skill: Spec Kit (Specification-Driven Development)

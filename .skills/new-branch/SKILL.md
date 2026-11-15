@@ -1,6 +1,7 @@
 ---
 name: new-branch
 description: The canonical recipe for starting a fresh working branch off a freshly fetched `origin/main` in Meshtastic-Android. Use this whenever a unit of work starts - "new branch off main", "peel off a fresh branch", "dust off #NNNN" - so the branch is based correctly and nothing is carried over from the last one.
+model: haiku
 ---
 
 # Skill: New Branch Bootstrap

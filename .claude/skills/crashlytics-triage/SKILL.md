@@ -1,7 +1,7 @@
 ---
 name: crashlytics-triage
 description: Triage current Meshtastic-Android crashes in Firebase Crashlytics — establish the right version filter (topVersions first, then topIssues filtered to "X.Y.Z (versionCode)"), fan out one crash-investigator subagent per top issue in parallel, and return a distilled verdict table. Use for "what's crashing", "triage Crashlytics", or "is build NNNN healthy" sweeps; for a single known issue id, dispatch crash-investigator directly instead.
-disable-model-invocation: true
+model: haiku
 ---
 
 # crashlytics-triage
@@ -15,7 +15,7 @@ Call `crashlytics_get_report` for **topVersions with NO filter**. This yields th
 `crashlytics_get_report` topIssues filtered to the exact display name from step 1. Take the top ~5 (or the requested count) by event count. Note event counts and affected-user counts.
 
 ## 3. Fan out — one crash-investigator per issue, in parallel
-Dispatch the `crash-investigator` agent for each issue **in a single message** so they run concurrently. Give each: the issue id, the version display name, and the ask (root-cause hypothesis + fix area + whether it's already fixed/known). Historical patterns to investigate — hints, not automatic classifications: cluster-renderer lifecycle (fix shipped in 29321034), MQTT/TLS ktor write (fixed, lingering 2.7.14 users), LazyColumn dup-key (two prior instances). Each investigator must verify the crashing versionCode against the fix's release before reporting "known-fixed-residual".
+Dispatch the `crash-investigator` agent for each issue **in a single message** so they run concurrently, using `model: opus` for each spawned agent to handle deep crash analysis. Give each: the issue id, the version display name, and the ask (root-cause hypothesis + fix area + whether it's already fixed/known). Historical patterns to investigate — hints, not automatic classifications: cluster-renderer lifecycle (fix shipped in 29321034), MQTT/TLS ktor write (fixed, lingering 2.7.14 users), LazyColumn dup-key (two prior instances). Each investigator must verify the crashing versionCode against the fix's release before reporting "known-fixed-residual".
 
 ## 4. Verdict
 One table: issue → crash count/users → root-cause hypothesis → status (NEW / known-fixed-residual / regression) → fix area. Flag anything that warrants a hotfix vs. next-release. No raw stack traces in the summary.
