@@ -24,7 +24,15 @@ import org.jetbrains.compose.resources.StringResource
  * The label is a provider or product name — OpenStreetMap, USGS Topo, Esri Imagery — so it is deliberately not
  * translated. Compare [RasterOverlaySource], whose labels describe what the layer shows and therefore are.
  */
-data class RasterBasemapSource(val id: String, val label: String, val spec: RasterTileSpec)
+data class RasterBasemapSource(
+    val id: String,
+    val label: String,
+    val spec: RasterTileSpec,
+    /**
+     * Whether the app can save this basemap as an offline region. Catalogue data, so adding one is a catalogue change.
+     */
+    val saveable: Boolean = false,
+)
 
 /** A raster layer composited over whichever basemap is selected. */
 data class RasterOverlaySource(

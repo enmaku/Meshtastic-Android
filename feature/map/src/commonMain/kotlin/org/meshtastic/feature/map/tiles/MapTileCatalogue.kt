@@ -67,6 +67,7 @@ object MapTileCatalogue {
                 maxZoom = 16,
                 attributionHtml = "USGS The National Map",
             ),
+            saveable = true,
         )
 
     val UsgsSatellite =
@@ -82,6 +83,7 @@ object MapTileCatalogue {
                 maxZoom = 16,
                 attributionHtml = "USGS The National Map",
             ),
+            saveable = true,
         )
 
     val EsriTopo =
@@ -121,6 +123,12 @@ object MapTileCatalogue {
     /** Every raster basemap, in menu order. */
     val basemaps: List<RasterBasemapSource> =
         listOf(OpenStreetMap, OpenTopo, UsgsTopo, UsgsSatellite, EsriTopo, EsriImagery)
+
+    /**
+     * The zoom a pinch on the Google map must stop at for [basemapId], or null when it is not a catalogue basemap and
+     * so has no published maximum.
+     */
+    fun zoomStopFor(basemapId: String?): Int? = basemaps.firstOrNull { it.id == basemapId }?.spec?.maxZoom
 
     val Hillshade =
         RasterOverlaySource(

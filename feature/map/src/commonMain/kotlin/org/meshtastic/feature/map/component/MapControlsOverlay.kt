@@ -78,6 +78,8 @@ fun MapControlsOverlay(
     filtersActive: Boolean = false,
     mapTypeContent: @Composable () -> Unit = {},
     layersContent: @Composable () -> Unit = {},
+    /** The offline-save button, for a flavor whose basemap can be saved; empty hides it. */
+    offlineContent: @Composable () -> Unit = {},
     onSitePlannerClick: (() -> Unit)? = null,
     isLocationTrackingEnabled: Boolean = false,
     /** Null hides the button, for maps with no location plumbing behind it — the node-track map. */
@@ -113,6 +115,9 @@ fun MapControlsOverlay(
 
         // Layers button (flavor-specific)
         layersContent()
+
+        // Offline-save button (flavor-specific)
+        offlineContent()
 
         // Site Planner coverage estimate (optional; provided by the Google flavor)
         onSitePlannerClick?.let { onClick ->

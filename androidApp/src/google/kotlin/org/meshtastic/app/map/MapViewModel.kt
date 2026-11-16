@@ -51,6 +51,10 @@ import org.meshtastic.app.map.offline.pmtiles.OfflineRegion
 import org.meshtastic.app.map.offline.pmtiles.OfflineRegionExtractor
 import org.meshtastic.app.map.offline.pmtiles.OfflineRegionStore
 import org.meshtastic.app.map.offline.pmtiles.OfflineRegionTileSet
+import org.meshtastic.app.map.offline.raster.HttpTileFetcher
+import org.meshtastic.app.map.offline.raster.RasterOfflineController
+import org.meshtastic.app.map.offline.raster.RasterOfflineStore
+import org.meshtastic.app.map.offline.raster.SavedRasterTileProvider
 import org.meshtastic.app.map.offline.terrain.TerrainDownloadPlanner
 import org.meshtastic.app.map.prefs.map.GoogleCameraPosition
 import org.meshtastic.app.map.prefs.map.GoogleMapSelectionPrefs
@@ -387,6 +391,42 @@ class MapViewModel(
         googleMapsPrefs.setSelectedCustomTileUrl(null)
     }
 
+    /**
+     * A saveable basemap draws its saved tiles first (see [SavedRasterTileProvider]); every other one is live tiles
+     * alone.
+     */
+    private fun remoteProvider(basemap: RasterBasemap.Remote): TileProvider {
+        val live = RasterTileProvider(basemap.spec, mapTileHttpClient.client)
+        val saveable = MapTileCatalogue.basemaps.any { it.id == basemap.id && it.saveable }
+        return if (saveable) {
+            SavedRasterTileProvider(
+                basemapId = basemap.id,
+                tileSize = basemap.spec.tileSize,
+                controller = rasterOffline,
+                live = live,
+                isOnline = { mapNetworkAvailable.value },
+            )
+        } else {
+            live
+        }
+    }
+
+    // --- Offline regions of raster basemaps (USGS) ---
+
+    private val rasterOffline =
+        RasterOfflineController(
+            store = RasterOfflineStore(File(application.filesDir, "raster_offline")),
+            fetcher = HttpTileFetcher(mapTileHttpClient.client, dispatchers.io),
+            scope = viewModelScope,
+            ioDispatcher = dispatchers.io,
+        )
+
+    internal val rasterOfflineController: RasterOfflineController
+        get() = rasterOffline
+
+    /** Free bytes on the volume saved tiles are written to. */
+    fun rasterOfflineFreeBytes(): Long = application.filesDir.usableSpace
+
     private var currentTileProvider: TileProvider? = null
     private var currentTileProviderBasemap: RasterBasemap? = null
 
@@ -411,7 +451,7 @@ class MapViewModel(
         val newProvider =
             when (basemap) {
                 is RasterBasemap.Local -> openLocalArchive(basemap.uri)
-                is RasterBasemap.Remote -> RasterTileProvider(basemap.spec, mapTileHttpClient.client)
+                is RasterBasemap.Remote -> remoteProvider(basemap)
             }
 
         currentTileProvider = newProvider

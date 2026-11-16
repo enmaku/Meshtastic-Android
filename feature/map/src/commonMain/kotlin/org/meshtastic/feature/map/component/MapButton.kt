@@ -35,8 +35,9 @@ fun MapButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconTint: Color? = null,
+    enabled: Boolean = true,
 ) {
-    FilledIconButton(onClick = onClick, modifier = modifier) {
+    FilledIconButton(onClick = onClick, modifier = modifier, enabled = enabled) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,

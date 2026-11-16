@@ -135,6 +135,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.meshtastic.app.map.component.CustomTileProviderManagerSheet
 import org.meshtastic.app.map.component.MapTypeDropdown
 import org.meshtastic.app.map.component.NodeClusterMarkers
+import org.meshtastic.app.map.component.OfflineCapture
+import org.meshtastic.app.map.component.RasterOfflineSheet
 import org.meshtastic.app.map.component.WaypointMarkers
 import org.meshtastic.app.map.model.NodeClusterItem
 import org.meshtastic.app.map.offline.pmtiles.OfflineRegionExtractor
@@ -174,6 +176,8 @@ import org.meshtastic.core.resources.manage_map_layers
 import org.meshtastic.core.resources.map_tile_source
 import org.meshtastic.core.resources.now
 import org.meshtastic.core.resources.position
+import org.meshtastic.core.resources.raster_offline_save_map
+import org.meshtastic.core.resources.raster_offline_save_unavailable
 import org.meshtastic.core.resources.sats
 import org.meshtastic.core.resources.speed
 import org.meshtastic.core.resources.speed_kmh
@@ -182,6 +186,7 @@ import org.meshtastic.core.resources.timestamp
 import org.meshtastic.core.resources.track_point
 import org.meshtastic.core.resources.unknown
 import org.meshtastic.core.ui.component.NodeChip
+import org.meshtastic.core.ui.icon.Download
 import org.meshtastic.core.ui.icon.Layers
 import org.meshtastic.core.ui.icon.Map
 import org.meshtastic.core.ui.icon.MeshtasticIcons
@@ -222,7 +227,10 @@ import org.meshtastic.feature.map.layers.MapLayerItem
 import org.meshtastic.feature.map.layers.opacityOf
 import org.meshtastic.feature.map.layers.toPickedMapFile
 import org.meshtastic.feature.map.mergeStationaryRuns
+import org.meshtastic.feature.map.terrain.GeoBounds
 import org.meshtastic.feature.map.terrain.MapterhornEndpoints
+import org.meshtastic.feature.map.tiles.MapTileCatalogue
+import org.meshtastic.feature.map.tiles.OfflineRegionPlan
 import org.meshtastic.feature.map.tiles.mapAttributionText
 import org.meshtastic.feature.map.tracerouteNodeSelection
 import org.meshtastic.proto.BoundingBox
@@ -304,6 +312,9 @@ private const val DEFAULT_GEOJSON_STROKE_WIDTH = 2f
 // Minimum lat/lon delta (~11 m) between the two box-authoring corner taps; below this the box would be degenerate
 // (zero-area) so the second tap is ignored.
 private const val BOX_AUTHORING_MIN_CORNER_DELTA = 1e-4
+
+/** The Google map's own pinch-zoom ceiling, restored whenever no basemap sets a lower one. */
+private const val MAX_GOOGLE_ZOOM = 21f
 
 /** Above the raster basemap at -1, below every marker and shape the mesh draws at 0 and up. */
 private const val OVERLAY_Z_INDEX = -0.5f
@@ -390,6 +401,15 @@ fun MapView(
     val layerOpacity by mapViewModel.layerOpacity.collectAsStateWithLifecycle()
 
     var mapTypeMenuExpanded by remember { mutableStateOf(false) }
+
+    // The saveable catalogue basemap now selected, if any — what enables the offline-save button and sets the zoom
+    // stop.
+    val saveableBasemap =
+        (currentRasterBasemap as? RasterBasemap.Remote)?.let { remote ->
+            MapTileCatalogue.basemaps.firstOrNull { it.id == remote.id && it.saveable }
+        }
+    val zoomStop = MapTileCatalogue.zoomStopFor((currentRasterBasemap as? RasterBasemap.Remote)?.id)
+    var offlineCapture by remember { mutableStateOf<OfflineCapture?>(null) }
     var showCustomTileManagerSheet by remember { mutableStateOf(false) }
 
     // --- Camera ---
@@ -705,6 +725,8 @@ fun MapView(
             MapProperties(
                 mapType = effectiveGoogleMapType,
                 isMyLocationEnabled = isLocationTrackingEnabled && locationPermission.isGranted,
+                // Past a catalogue basemap's last real tiles the map only goes gray, so pinching stops there.
+                maxZoomPreference = zoomStop?.toFloat() ?: MAX_GOOGLE_ZOOM,
             ),
             onMapLoaded = {
                 isMapLoaded = true
@@ -1105,6 +1127,48 @@ fun MapView(
                     onClick = { showLayersBottomSheet = true },
                 )
             },
+            offlineContent = {
+                if (isMainMode) {
+                    MapButton(
+                        icon = MeshtasticIcons.Download,
+                        contentDescription =
+                        stringResource(
+                            if (saveableBasemap != null) {
+                                Res.string.raster_offline_save_map
+                            } else {
+                                Res.string.raster_offline_save_unavailable
+                            },
+                        ),
+                        enabled = saveableBasemap != null,
+                        onClick = {
+                            val source = saveableBasemap ?: return@MapButton
+                            val view = cameraPositionState.projection?.visibleRegion?.latLngBounds
+                            if (view != null) {
+                                mapViewModel.rasterOfflineController.clearNotice()
+                                offlineCapture =
+                                    OfflineCapture(
+                                        basemapId = source.id,
+                                        bounds =
+                                        GeoBounds(
+                                            south = view.southwest.latitude,
+                                            west = view.southwest.longitude,
+                                            north = view.northeast.latitude,
+                                            east = view.northeast.longitude,
+                                        ),
+                                        currentZoom =
+                                        OfflineRegionPlan.defaultZoomRange(
+                                            cameraPositionState.position.zoom,
+                                            source.spec.minZoom,
+                                            source.spec.maxZoom,
+                                        )
+                                            .first,
+                                        maxZoom = source.spec.maxZoom,
+                                    )
+                            }
+                        },
+                    )
+                }
+            },
             // Hands params to the hosted Site Planner and imports the returned coverage.
             onSitePlannerClick = {
                 sitePlannerLaunch = SitePlannerLaunch(initialParams = ourNodeInfo.toSitePlannerParams(channelSet))
@@ -1262,6 +1326,30 @@ fun MapView(
                 showClusterItemsDialog = null
             },
             onDismissRequest = { showClusterItemsDialog = null },
+        )
+    }
+    offlineCapture?.let { capture ->
+        val controller = mapViewModel.rasterOfflineController
+        val rasterRegions by controller.regions.collectAsStateWithLifecycle()
+        val rasterSummary by controller.summary.collectAsStateWithLifecycle()
+        val saveProgress by controller.progress.collectAsStateWithLifecycle()
+        val saveNotice by controller.notice.collectAsStateWithLifecycle()
+        val freeBytes = remember(capture) { mapViewModel.rasterOfflineFreeBytes() }
+        RasterOfflineSheet(
+            capture = capture,
+            freeBytes = freeBytes,
+            regions = rasterRegions,
+            summary = rasterSummary,
+            progress = saveProgress,
+            notice = saveNotice,
+            onSave = { name, zoomRange ->
+                controller.save(capture.basemapId, capture.bounds, zoomRange, name)
+            },
+            onCancelSave = controller::cancel,
+            onDelete = controller::delete,
+            onDismiss = {
+                if (saveProgress == null) offlineCapture = null
+            },
         )
     }
     if (showCustomTileManagerSheet) {
