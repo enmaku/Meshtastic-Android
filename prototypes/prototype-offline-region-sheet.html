@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE - offline region sheet (throwaway)</title>
+<!-- PROTOTYPE: 3 variants of the USGS offline region download sheet. Switch with ←/→ or bottom bar. Throwaway; state is in memory. -->
+<style>
+:root{--bg:#1c1b1f;--surf:#2b2930;--surf2:#36343b;--on:#e6e1e5;--dim:#a9a4ad;--pri:#67ea94;--onpri:#003919;--warn:#ffb74d;--err:#ffb4ab;--line:#49454f}
+*{box-sizing:border-box}body{margin:0;background:#0e0e10;color:var(--on);font:14px/1.4 system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:16px 0 90px}
+.ctl{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;max-width:380px}
+.ctl button{background:#222;color:#ccc;border:1px solid #444;border-radius:14px;padding:4px 10px;font-size:12px;cursor:pointer}
+.ctl button.on{background:#67ea94;color:#003919;border-color:#67ea94}
+.phone{width:380px;height:760px;background:var(--bg);border-radius:24px;overflow:hidden;position:relative;border:1px solid #333}
+.map{position:absolute;inset:0;background:linear-gradient(135deg,#3b4a3a,#55604a 40%,#3a4a55);opacity:.9}
+.top{position:absolute;top:0;left:0;right:0;height:56px;background:rgba(28,27,31,.9);display:flex;align-items:center;gap:14px;padding:0 16px;font-size:18px}
+.top .sp{flex:1}.top .ic{opacity:.9}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surf);border-radius:28px 28px 0 0;padding:8px 20px 20px;max-height:92%;overflow:auto}
+.grab{width:32px;height:4px;border-radius:2px;background:var(--dim);margin:0 auto 12px}
+h2{font-size:20px;margin:0 0 2px;font-weight:500}h3{font-size:13px;margin:16px 0 6px;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.sub{color:var(--dim);font-size:13px;margin-bottom:10px}
+.field{border:1px solid var(--line);border-radius:6px;padding:8px 12px;color:var(--dim);margin:8px 0}
+.slider{margin:6px 0 2px}.track{height:4px;background:var(--line);border-radius:2px;position:relative;margin:14px 8px}
+.track i{position:absolute;left:0;width:66%;height:4px;background:var(--pri);border-radius:2px}
+.track b{position:absolute;left:66%;top:-8px;width:20px;height:20px;border-radius:50%;background:var(--pri);margin-left:-10px}
+.row2{display:flex;justify-content:space-between;color:var(--dim);font-size:12px}
+.est{background:var(--surf2);border-radius:12px;padding:10px 12px;margin:10px 0;display:flex;justify-content:space-between;align-items:baseline}
+.est big{font-size:18px}
+.banner{border-radius:12px;padding:10px 12px;margin:8px 0;font-size:13px}
+.banner.warn{background:#4a3a1c;color:var(--warn)}.banner.err{background:#4a2420;color:var(--err)}.banner.info{background:var(--surf2);color:var(--dim)}
+.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.b{border-radius:20px;padding:9px 20px;font-weight:500;border:0;cursor:pointer;font-size:14px}
+.b.p{background:var(--pri);color:var(--onpri)}.b.p[disabled]{background:#3a3a3a;color:#777}.b.t{background:none;color:var(--pri)}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin:0 -20px 12px}.tabs div{flex:1;text-align:center;padding:10px;color:var(--dim);cursor:pointer}.tabs .on{color:var(--pri);border-bottom:2px solid var(--pri)}
+.item{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.item .m{flex:1;min-width:0}.item .n{font-weight:500}.item .d{color:var(--dim);font-size:12px}
+.chip{display:inline-block;background:var(--surf2);border-radius:8px;padding:1px 7px;font-size:11px;color:var(--dim);margin-right:4px}
+.chip.h{color:var(--warn)}
+.del{color:var(--err);cursor:pointer;font-size:18px}
+.dlg{position:absolute;left:28px;right:28px;top:50%;transform:translateY(-50%);background:var(--surf);border-radius:28px;padding:22px}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:14px 0 6px}.bar i{display:block;height:6px;width:42%;background:var(--pri);border-radius:3px}
+.hdr{display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:13px;padding:6px 0}
+.link{color:var(--pri);cursor:pointer}
+.pill{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#fff;color:#000;border-radius:24px;padding:8px 14px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 12px #000a;font-weight:600;z-index:9}
+.pill button{border:0;background:none;font-size:18px;cursor:pointer}
+.legend{color:#888;font-size:12px;max-width:380px;margin:10px 0 0;text-align:center}
+</style></head><body>
+<div class="ctl" id="states"></div>
+<div class="phone" id="phone"></div>
+<div class="legend" id="legend"></div>
+<div class="pill"><button onclick="step(-1)">←</button><span id="vlabel"></span><button onclick="step(1)">→</button></div>
+<script>
+const VARS=[['A','One sheet: form on top, saved list below'],['B','Sheet with two tabs: Save | Saved'],['C','Compact save sheet; list is its own screen via header link']];
+const STATES=[['ready','Ready'],['warn','Over 200 MB warning'],['cap','Over 100,000 tiles (blocked)'],['space','Not enough space (blocked)'],['progress','Saving (modal)'],['holes','Done: partial coverage notice'],['empty','No saved regions']];
+let v=+(new URLSearchParams(location.search).get('v')??0), st='ready', tab=0, c_screen=0;
+const REG=[['Bay Area ridge','USGS Topo','z12–16','186 MB','frees 142 MB',0],['Home valley','USGS Imagery','z10–15','64 MB','frees 64 MB',0],['(37.77, -122.42)','USGS Topo','z13–16','41 MB','frees 3 MB',1]];
+const list=(rows)=>rows.map(r=>`<div class="item"><div class="m"><div class="n">${r[0]}</div><div class="d">${r[1]} · ${r[2]} · ${r[3]}</div><div class="d">${r[4]}${r[5]?' <span class="chip h">partial coverage · 212 holes</span>':''}</div></div><span class="del" title="Delete (confirm dialog)">🗑</span></div>`).join('');
+const hdr=`<div class="hdr"><span>3 offline regions</span><span>Total 273 MB</span></div>`;
+function form(){
+ const est={ready:['Up to 38 MB','11,420 tiles'],warn:['Up to 312 MB','46,800 tiles'],cap:['—','148,200 tiles'],space:['Up to 640 MB','25,600 tiles'],holes:['Up to 38 MB','11,420 tiles'],empty:['Up to 38 MB','11,420 tiles']}[st]||['Up to 38 MB','11,420 tiles'];
+ const banner={warn:'<div class="banner warn">This is a large download (over 200 MB). You can continue anyway.</div>',
+  cap:'<div class="banner err">Too many tiles: 148,200 (limit 100,000). Zoom the map in or lower the maximum zoom.</div>',
+  space:'<div class="banner err">Not enough free space. This needs up to 640 MB; 1.1 GB free, 500 MB kept in reserve.</div>'}[st]||'';
+ const blocked=st==='cap'||st==='space';
+ return `<h2>Save USGS Topo offline</h2><div class="sub">Current view, frozen when this sheet opened</div>
+ <div class="field">Name (optional)</div>
+ <div class="row2"><span>Zoom range</span><b style="color:var(--on)">${st==='cap'?'z11–16':'z12–16'}</b></div>
+ <div class="slider"><div class="track"><i></i><b></b></div></div><div class="row2"><span>12 (current)</span><span>16 (max)</span></div>
+ <div class="est"><span>${est[1]}</span><big>${est[0]}</big></div>${banner}
+ ${st==='holes'?'<div class="banner info">Saved with partial coverage: USGS has no tiles for 212 places. Those areas will be blank offline.</div>':''}
+ <div class="btns"><button class="b t">Cancel</button><button class="b p" ${blocked?'disabled':''}>${st==='warn'?'Download anyway':'Download'}</button></div>`}
+function A(){return `<div class="grab"></div>${st==='empty'?'':''}${form()}<h3>Saved offline regions</h3>${st==='empty'?'<div class="sub">Nothing saved yet.</div>':hdr+list(REG)}`}
+function B(){return `<div class="grab"></div><div class="tabs"><div class="${tab?'':'on'}" onclick="tab=0;draw()">Save this view</div><div class="${tab?'on':''}" onclick="tab=1;draw()">Saved${st==='empty'?'':' (3)'}</div></div>${tab?(st==='empty'?'<div class="sub">Nothing saved yet.</div>':hdr+list(REG)):form()}`}
+function C(){ if(c_screen) return `<div style="position:absolute;inset:0;background:var(--bg);padding:16px"><div style="font-size:18px;margin:4px 0 12px"><span class="link" onclick="c_screen=0;draw()">←</span> Offline regions</div>${st==='empty'?'<div class="sub">Nothing saved yet.</div>':hdr+list(REG)}</div>`;
+ return `<div class="grab"></div><div class="hdr" style="padding-top:0"><span></span><span class="link" onclick="c_screen=1;draw()">${st==='empty'?'No saved regions':'3 saved · 273 MB ›'}</span></div>${form()}`}
+function draw(){
+ const body=[A,B,C][v]();
+ const prog=st==='progress'?`<div class="scrim" style="background:rgba(0,0,0,.6)"></div><div class="dlg"><h2>Saving offline region</h2><div class="sub">USGS Topo · z12–16</div><div class="bar"><i></i></div><div class="row2"><span>4,800 of 11,420 tiles</span><span>42%</span></div><div class="btns"><button class="b t">Cancel</button></div><div class="sub" style="margin:8px 0 0">Cancelling discards everything saved so far.</div></div>`:'';
+ phone.innerHTML=`<div class="map"></div><div class="top"><span>☰</span><span>Map</span><span class="sp"></span><span class="ic" style="opacity:1">⬇</span><span class="ic">⛭</span></div><div class="scrim"></div>${(v===2&&c_screen)?'':'<div class="sheet">'+body+'</div>'}${(v===2&&c_screen)?body:''}${prog}`;
+ states.innerHTML=STATES.map(s=>`<button class="${s[0]===st?'on':''}" onclick="st='${s[0]}';draw()">${s[1]}</button>`).join('');
+ vlabel.textContent=VARS[v][0]+' ('+VARS[v][1]+')'; legend.textContent=VARS[v][1];
+ history.replaceState(null,'','?v='+v);
+}
+function step(d){v=(v+d+VARS.length)%VARS.length;tab=0;c_screen=0;draw()}
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1)});
+draw();
+</script></body></html>
