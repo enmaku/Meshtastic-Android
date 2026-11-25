@@ -1,5 +1,6 @@
 ---
 name: proto-bump
+model: sonnet
 description: Change the org.meshtastic:protobufs pin for Meshtastic-Android — either bump to a tagged release (mergeable) or track develop-SNAPSHOT for a preview (draft), adding/removing the transitive resolution-force hack as appropriate. Verifies with test/allTests (not just compile) via the gradle-runner subagent, audits the new field surface, and opens a PR. Use to consume new proto changes or to re-pin a SNAPSHOT draft onto a tag.
 disable-model-invocation: true
 ---
@@ -68,7 +69,7 @@ Update `#NNNN` to the current PR. Remove this entire block when returning to a t
 
 ## Verification (don't skip test/allTests)
 
-Dispatch the **gradle-runner** subagent (keep the heavy log out of context). The downgrade failure mode above is a *runtime* classpath problem invisible to compilation, so verification MUST exercise tests:
+Dispatch the **gradle-runner** (pass `model="haiku"` on the `Agent` call) subagent (keep the heavy log out of context). The downgrade failure mode above is a *runtime* classpath problem invisible to compilation, so verification MUST exercise tests:
 
 - `kmpSmokeCompile` + a broad compile of proto-consuming modules (`core:*`, `feature:*`) — catches *compile-time* breaking changes (renamed/removed fields, changed oneof shapes).
 - **`test` and `allTests`** — the only gate that catches the transitive runtime downgrade. Treat a green compile as necessary-but-not-sufficient.

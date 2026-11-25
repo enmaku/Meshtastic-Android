@@ -1,5 +1,6 @@
 ---
 name: baseline
+model: sonnet
 description: Run the mandatory pre-push baseline verification for Meshtastic-Android — bootstrap, then spotlessApply/spotlessCheck/detekt/assembleDebug/test/allTests (plus kmpSmokeCompile and sort-strings when relevant) via the gradle-runner subagent, restore the host-render screenshot diff, and report a single pass/fail. Use before every push. This is the check CI fails on when skipped.
 disable-model-invocation: true
 ---
@@ -23,7 +24,7 @@ git diff --name-only HEAD && git diff --cached --name-only
 - **New top-level module**: confirm its `<root>/**` line is in `.github/workflows/pull-request.yml` `android:` filter (else the drift guard fails the PR — #5735).
 
 ## 3. Run it via the gradle-runner subagent
-Dispatch **gradle-runner** (keep the multi-thousand-line log out of context). The baseline is:
+Dispatch **gradle-runner** (pass `model="haiku"` on the `Agent` call) (keep the multi-thousand-line log out of context). The baseline is:
 ```
 ./gradlew spotlessApply spotlessCheck detekt assembleDebug test allTests
 ```
